@@ -17,3 +17,8 @@ All notable changes to this project are documented here. The format is based on
   turning the read-only design into an enforced guarantee.
 - Packaging via `pyproject.toml` with a `ynab-readonly-mcp` console entry point.
 - CI workflow that compiles the server and runs the test suite on every push.
+- `ynab_list_accounts` now surfaces the stored interest rate and minimum payment
+  for loan/debt-type accounts (mortgage, student loan, personal loan, auto loan,
+  etc.). Credit cards and lines of credit have no rate in YNAB, so none is shown.
+  The `debt-payoff-planner` skill reads these automatically and only asks the user
+  for card/line-of-credit rates.

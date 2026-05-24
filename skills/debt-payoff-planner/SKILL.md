@@ -22,19 +22,21 @@ People rarely know their real debt-free date because the math is tedious: intere
 
 ## What YNAB does and doesn't give you
 
-The server can read balances, account types, and recurring payments — but **YNAB does not store interest rates.** APR is the single most important input for an avalanche plan, so you must get it from the user. Don't guess or skip it.
+For **loan/debt-type accounts** (mortgage, studentLoan, personalLoan, autoLoan, medicalDebt, otherDebt), `ynab_list_accounts` reports the **interest rate** and **minimum payment** stored in YNAB — read those directly instead of asking. For **credit cards and lines of credit**, YNAB has nowhere to store a rate, so you must ask the user for those. This is common and worth saying plainly: promotional balance-transfer rates and HELOC rates live only on the statement, never in YNAB.
+
+APR is the single most important input for an avalanche plan, so make sure you have one for every debt — take it from the account where YNAB has it, ask where it doesn't. Sanity-check at least one YNAB-supplied rate against what the user expects: the rate is read assuming a 1000× scale, so if a loan the user knows is 4.96% instead shows up as 49.6% or 0.0496%, flag the mismatch rather than trusting it.
 
 ## Steps
 
-1. **Pull the debts.** Call `ynab_list_accounts`. Treat accounts with negative balances and a liability type as debts: `creditCard`, `lineOfCredit`, `personalLoan`, `studentLoan`, `autoLoan`, `mortgage`, `otherLiability`/`otherDebt`. List them back to the user with balances.
+1. **Pull the debts.** Call `ynab_list_accounts`. Treat negative-balance liability accounts as debts: `creditCard`, `lineOfCredit`, `personalLoan`, `studentLoan`, `autoLoan`, `mortgage`, `otherLiability`/`otherDebt`. For loan-type accounts the output already includes the interest rate and minimum payment — capture those. List everything back to the user with balances and the rates you found.
 
-2. **Confirm scope and rates.** Ask the user:
+2. **Fill the gaps and confirm scope.** Ask the user only for what YNAB couldn't supply:
+   - The **APR for each credit card and line of credit** — YNAB has no rate for these (this is usually the promotional balance-transfer rates and the HELOC).
    - Which debts to include. Mortgages are usually *excluded* from an aggressive payoff plan (low rate, very long term) — confirm rather than assume.
-   - The **APR** for each included debt.
    - Their **monthly amount available for debt** (the surplus beyond normal expenses). If they don't know it, suggest running the `paycheck-surplus-check` skill first.
    - A **cash floor** — the minimum cash they want to keep on hand and never spend down (an emergency buffer). Acceleration only uses cash above this floor.
 
-3. **Find the minimums.** Call `ynab_get_scheduled_transactions` to find the recurring payment for each debt, or ask. Minimums always get paid; the surplus is what accelerates payoff.
+3. **Confirm the minimums.** Loan accounts report their minimum payment directly (from step 1). For credit cards, find the recurring payment via `ynab_get_scheduled_transactions` or ask. Minimums always get paid; the surplus is what accelerates payoff.
 
 4. **Pick a strategy and explain the trade-off.**
    - **Avalanche** (default): attack the highest-APR debt first. Mathematically optimal — it minimizes total interest.

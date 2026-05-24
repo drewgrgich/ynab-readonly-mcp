@@ -95,6 +95,40 @@ def _format_date(date_str: Optional[str]) -> str:
     return date_str
 
 
+# YNAB exposes interest rates and minimum payments only for loan/debt-type
+# accounts (mortgage, studentLoan, personalLoan, autoLoan, medicalDebt,
+# otherDebt). Credit cards and lines of credit have nowhere to store a rate, so
+# these fields are absent there. The values are date-keyed maps; the current
+# figure is the entry for the most recent date.
+#
+# Interest rates are integers scaled by 1000 (a "milli-percent"): 4960 == 4.96%.
+# Minimum payments are in milliunits like any other money amount.
+# NOTE: confirm the rate scale on first use against a loan whose rate you know.
+INTEREST_RATE_SCALE = 1000
+
+
+def _latest_dated_value(date_map):
+    """Return the value for the most recent date key in a YNAB date-keyed map
+    (e.g. debt_interest_rates), or None if the map is empty/absent."""
+    if not date_map or not isinstance(date_map, dict):
+        return None
+    return date_map[max(date_map.keys())]
+
+
+def _format_debt_fields(account: dict) -> str:
+    """Summarize the stored interest rate and minimum payment for a loan/debt
+    account. Returns '' when neither is present (the normal case for cash,
+    checking, credit cards, and lines of credit)."""
+    parts = []
+    rate_raw = _latest_dated_value(account.get("debt_interest_rates"))
+    if rate_raw:
+        parts.append(f"Interest rate: {rate_raw / INTEREST_RATE_SCALE:.2f}%")
+    min_raw = _latest_dated_value(account.get("debt_minimum_payments"))
+    if min_raw:
+        parts.append(f"Min payment: {_format_milliunits(min_raw)}")
+    return " | ".join(parts)
+
+
 # --- Input Models ---
 
 class BudgetIdInput(BaseModel):
@@ -322,6 +356,9 @@ async def ynab_list_accounts(params: AccountsInput) -> str:
                 uncleared = _format_milliunits(a.get("uncleared_balance", 0))
                 lines.append(f"- **{a['name']}** (ID: `{a['id']}`)")
                 lines.append(f"  Balance: {bal} | Cleared: {cleared} | Uncleared: {uncleared}")
+                debt = _format_debt_fields(a)
+                if debt:
+                    lines.append(f"  {debt}")
                 if a.get("note"):
                     lines.append(f"  Note: {a['note']}")
             lines.append("")

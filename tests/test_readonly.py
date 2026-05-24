@@ -41,11 +41,32 @@ def test_all_tools_declared_read_only():
     )
 
 
-def test_format_milliunits():
-    """YNAB stores money in milliunits; the server must render dollars correctly."""
+def _load_module():
     spec = importlib.util.spec_from_file_location("ynab_mcp", SRC)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    return mod
+
+
+def test_format_milliunits():
+    """YNAB stores money in milliunits; the server must render dollars correctly."""
+    mod = _load_module()
     assert mod._format_milliunits(1_234_560) == "$1,234.56"
     assert mod._format_milliunits(0) == "$0.00"
     assert mod._format_milliunits(-5_000) == "$-5.00"
+
+
+def test_debt_fields_for_loans():
+    """Loan accounts expose a rate (1000x-scaled) and a milliunit minimum payment;
+    accounts without debt fields (cards, cash) produce nothing."""
+    mod = _load_module()
+    loan = {
+        "debt_interest_rates": {"2025-01-01": 5000, "2026-01-01": 4960},
+        "debt_minimum_payments": {"2026-01-01": 256_700},
+    }
+    out = mod._format_debt_fields(loan)
+    assert "4.96%" in out          # uses the most recent date, 1000x scale
+    assert "$256.70" in out
+    # no debt fields -> empty string (the credit-card / cash case)
+    assert mod._format_debt_fields({"debt_interest_rates": {}, "debt_minimum_payments": None}) == ""
+    assert mod._format_debt_fields({}) == ""
