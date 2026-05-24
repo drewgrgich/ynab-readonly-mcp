@@ -24,3 +24,6 @@ env/
 .idea/
 .vscode/
 *.swp
+
+# Maintainer-only notes — kept local, not published
+PUBLISHING.md

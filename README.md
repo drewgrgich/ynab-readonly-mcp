@@ -114,7 +114,7 @@ Replace `/absolute/path/to/...` with where you cloned this repo, and `your-token
 
 **Optional:** add `"YNAB_BUDGET_ID": "..."` to the `env` block to set a default budget so you don't pass a budget ID to every tool. Find the ID by running `ynab_list_budgets` once. Leave it out to use YNAB's "last-used" budget.
 
-> Once published to PyPI, the `command`/`args` simplify to `"command": "uvx"`, `"args": ["ynab-readonly-mcp"]` — no clone required. See [`PUBLISHING.md`](./PUBLISHING.md).
+> Once published to PyPI, the `command`/`args` simplify to `"command": "uvx"`, `"args": ["ynab-readonly-mcp"]` — no clone required.
 
 ### Other clients
 
