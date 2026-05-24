@@ -1,0 +1,26 @@
+# Secrets — never commit your real token or local MCP config
+.env
+*.env
+claude_desktop_config.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# uv
+.uv/
+
+# OS / editor cruft
+.DS_Store
+.idea/
+.vscode/
+*.swp
